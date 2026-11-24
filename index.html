@@ -3,782 +3,185 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AgentForge — Obsidian Studio</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            ob: '#0B0C0E',
-            card: '#181A20',
-            line: '#262932',
-            acc: '#FF5E1E',
-            mut: '#8A8F9C',
-            ok: '#3DD68C',
-          },
-          fontFamily: {
-            sans: ['Outfit', 'sans-serif'],
-            mono: ['JetBrains Mono', 'monospace'],
-          },
-        },
-      },
-    };
-  </script>
+  <title>AgentForge — Obsidian Studio &amp; MusicGPT Hub</title>
   <style>
     :root {
-      --r: 10px;
       --bg: #0B0C0E;
+      --panel: #121419;
       --card: #181A20;
-      --acc: #FF5E1E;
+      --border: #2B2420;
+      --text: #FFB020;
+      --muted: #C46A28;
+      --accent: #FF5E1E;
+      --amber: #FF9A1F;
+      --ok: #39FF14;
+      --warn: #FF7A1A;
+      --err: #FF2A2A;
     }
+    * { box-sizing: border-box; }
     body {
-      background: var(--bg);
-      font-family: 'Outfit', sans-serif;
-      color: #E9EAEE;
       margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.45;
     }
-    .gl {
-      box-shadow: 0 0 0 1px #ffffff0a, 0 12px 40px -12px #000, 0 0 30px -10px #ff5e1e18;
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 16px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 20;
     }
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; color: var(--amber); }
+    .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+    .pill { font-size: 11px; padding: 3px 8px; border-radius: 999px; background: var(--card); border: 1px solid var(--border); color: var(--accent); }
+    .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    button { background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 12px; font-weight: 700; cursor: pointer; }
+    button:active { transform: scale(0.98); }
+    button.primary { background: var(--accent); color: #0B0C0E; border-color: var(--accent); }
+    button.amber { border-color: var(--amber); color: var(--amber); }
+    button.active-tab { border-color: var(--accent); color: var(--accent); background: #221611; }
+    .layout { display: grid; grid-template-columns: 1fr; gap: 14px; padding: 14px; max-width: 1400px; margin: 0 auto; }
+    @media (min-width: 960px) { .layout { grid-template-columns: 1.55fr 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+    .panel-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+    .panel-title { font-size: 13px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--accent); }
+    .stage-wrap { background: #08090B; border: 1px solid var(--border); border-radius: 10px; padding: 12px; transition: max-width 0.2s ease; margin: 0 auto; }
+    .stage-wrap.mobile-sim { max-width: 390px; }
+    .subtabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+    label { display: block; font-size: 11px; color: var(--muted); margin: 10px 0 4px; text-transform: uppercase; letter-spacing: 0.3px; }
+    input, textarea, select { width: 100%; background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; font-size: 13px; font-family: inherit; }
+    textarea { min-height: 76px; resize: vertical; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .vr-stage {
+      position: relative; height: 190px; border-radius: 10px; border: 1px solid var(--border);
+      background: radial-gradient(circle at 50% 35%, rgba(255, 94, 30, 0.25), transparent 60%),
+        repeating-linear-gradient(90deg, rgba(255, 154, 31, 0.08) 0 1px, transparent 1px 28px),
+        repeating-linear-gradient(0deg, rgba(255, 154, 31, 0.08) 0 1px, transparent 1px 28px), #090A0D;
+      overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 12px; touch-action: none; user-select: none;
     }
-    ::-webkit-scrollbar-track {
-      background: #0B0C0E;
+    .vr-orb {
+      width: 68px; height: 68px; border-radius: 50%; border: 2px solid var(--accent);
+      box-shadow: 0 0 24px rgba(255, 94, 30, 0.55), inset 0 0 16px rgba(255, 154, 31, 0.4);
+      display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--amber);
+      transition: transform 0.08s linear;
     }
-    ::-webkit-scrollbar-thumb {
-      background: #262932;
-      border-radius: 9999px;
-    }
+    .vr-hud { position: absolute; bottom: 8px; left: 10px; right: 10px; display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+    .card-item { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-top: 8px; }
+    .log-box { background: #08090B; border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; max-height: 210px; overflow-y: auto; }
+    .log-line { margin-bottom: 6px; border-bottom: 1px solid #1C1613; padding-bottom: 4px; }
+    .ok { color: var(--ok); } .warn { color: var(--warn); } .err { color: var(--err); } .muted { color: var(--muted); font-size: 12px; }
+    iframe.sandbox-frame { width: 100%; height: 360px; border: 1px solid var(--border); border-radius: 8px; background: #0B0C0E; }
+    .hidden { display: none !important; }
+    .status-badge { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 6px; background: #1D1816; }
   </style>
 </head>
-<body class="min-h-screen flex flex-col bg-ob text-[13px] selection:bg-acc selection:text-ob">
-
-  <!-- Top Header -->
-  <header class="flex flex-wrap items-center gap-3 px-4 md:px-6 py-3 md:h-14 border-b border-line bg-ob sticky top-0 z-30">
-    <div class="flex items-center gap-2">
-      <div class="w-6 h-6 rounded-[7px] bg-acc grid place-items-center shadow-[0_0_14px_#FF5E1E66]">
-        <div class="w-2.5 h-2.5 rounded-sm bg-ob"></div>
-      </div>
-      <span class="text-mut">Projects</span>
-      <span class="text-mut/50">/</span>
-      <input
-        id="projectNameInput"
-        value="InvoiceOps Agent"
-        aria-label="Project Name"
-        class="bg-transparent font-semibold text-white text-[15px] focus:outline-none focus:border-b focus:border-acc w-40 sm:w-48"
-      />
+<body>
+  <header>
+    <div class="brand">
+      <span class="dot"></span>
+      <span>AgentForge — Obsidian Studio</span>
+      <span class="pill" id="envBadge">Sandbox Ready</span>
     </div>
-
-    <span id="sandboxBadge" class="px-3 py-1 rounded-full bg-card border border-line text-[11px] font-mono text-mut flex items-center gap-2">
-      <span id="sandboxDot" class="w-1.5 h-1.5 rounded-full bg-ok"></span>
-      <span id="sandboxText">Sandbox: Active #sb-892</span>
-    </span>
-
-    <div class="ml-auto flex items-center gap-3">
-      <span id="testStatusBadge" class="hidden sm:flex items-center gap-1.5 text-[12px] text-ok">
-        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M3 7.5l2.5 2.5L11 4"></path>
-        </svg>
-        <span id="testStatusText">All 6 Tests Passing</span>
-      </span>
-      <button
-        id="openExportBtn"
-        class="px-5 h-9 rounded-full bg-acc text-ob font-semibold hover:brightness-110 active:scale-[0.99] transition cursor-pointer"
-      >
-        Export &amp; Deploy
-      </button>
+    <div class="header-actions">
+      <a href="https://unbrokenbo.github.io/Unbroken-Ecosystem/projects.html" style="text-decoration:none;"><button type="button">Hub Locker</button></a>
+      <button type="button" id="btnDesktop" class="active-tab" onclick="setViewport('desktop')">Desktop</button>
+      <button type="button" id="btnMobile" onclick="setViewport('mobile')">Mobile</button>
+      <button type="button" class="primary" onclick="scrollToDeploy()">Export &amp; Deploy</button>
     </div>
   </header>
 
-  <!-- Main 62/38 Workspace Grid -->
-  <main class="flex-1 grid grid-cols-1 lg:grid-cols-[62fr_38fr] gap-5 p-4 md:p-5">
-
-    <!-- Left Column: Preview + Pipeline -->
-    <section class="flex flex-col gap-4 min-w-0">
-      <!-- Workspace Tabs -->
-      <div class="flex items-center gap-6 border-b border-line text-[13px] overflow-x-auto">
-        <button data-tab="preview" class="tab-btn pb-2.5 border-b-2 border-acc text-white font-medium whitespace-nowrap cursor-pointer">
-          Live Preview
-        </button>
-        <button data-tab="log" class="tab-btn pb-2.5 border-b-2 border-transparent text-mut hover:text-white whitespace-nowrap cursor-pointer">
-          Self-Healing Log
-          <span id="healCountBadge" class="ml-1 px-1.5 py-0.5 rounded bg-acc/15 text-acc text-[11px] font-mono">2 auto-fixed</span>
-        </button>
-        <button data-tab="code" class="tab-btn pb-2.5 border-b-2 border-transparent text-mut hover:text-white whitespace-nowrap cursor-pointer">
-          Code Tree
-        </button>
+  <main class="layout">
+    <section class="panel">
+      <div class="panel-head">
+        <span class="panel-title">Live Preview &amp; Studio Stage</span>
+        <div class="subtabs" style="margin:0;">
+          <button type="button" id="tabMusic" class="active-tab" onclick="switchStageTab('music')">MusicGPT Studio</button>
+          <button type="button" id="tabVR" onclick="switchStageTab('vr')">VR Video &amp; Prompts</button>
+          <button type="button" id="tabSandbox" onclick="switchStageTab('sandbox')">App Sandbox Tester</button>
+        </div>
       </div>
 
-      <!-- Browser / Inspector Frame -->
-      <div class="gl bg-card rounded-[10px] overflow-hidden flex-1 flex flex-col min-h-[430px]">
-        <!-- Browser Chrome -->
-        <div class="flex items-center gap-3 px-3 h-11 border-b border-line shrink-0">
-          <div class="flex gap-1.5">
-            <span class="w-2.5 h-2.5 rounded-full bg-line"></span>
-            <span class="w-2.5 h-2.5 rounded-full bg-line"></span>
-            <span class="w-2.5 h-2.5 rounded-full bg-line"></span>
+      <div id="stageWrap" class="stage-wrap">
+        <div id="viewMusic">
+          <div class="row2">
+            <div><label>Track Title</label><input id="trackTitle" value="Shady Bacon — Outlaw Ballad" /></div>
+            <div><label>Music Style / Genre</label><input id="musicStyle" value="1980s Synth-Pop, Outlaw Country Harmonica, Raw Vocals" /></div>
           </div>
-          <div id="sandboxUrlBar" class="flex-1 mx-2 sm:mx-6 h-7 rounded-full bg-ob font-mono text-[11px] text-mut flex items-center px-3 truncate">
-            https://sb-892.sandbox.run/invoices
+          <label>Audio Prompt (Under 1000 chars)</label>
+          <textarea id="musicPrompt">Gritty harmonica lead, punchy analog drum machine, driving bassline, high energy narrative delivery.</textarea>
+          <label>Custom Lyrics (Optional)</label>
+          <textarea id="musicLyrics">[Verse 1]
+82 pounds on the delivery scale,
+Struck a match on his stubble in the county jail...</textarea>
+          <div class="row2" style="margin-top:8px;">
+            <label style="display:flex;align-items:center;gap:6px;margin:0;"><input type="checkbox" id="chkInstrumental" style="width:auto;" /> Instrumental Only</label>
+            <label style="display:flex;align-items:center;gap:6px;margin:0;"><input type="checkbox" id="chkVocalOnly" style="width:auto;" /> Vocal Only</label>
           </div>
-          <div class="flex p-0.5 rounded-full bg-ob text-[11px]">
-            <button id="viewDesktopBtn" class="px-3 py-1 rounded-full bg-line text-white cursor-pointer">Desktop</button>
-            <button id="viewMobileBtn" class="px-3 py-1 rounded-full text-mut hover:text-white cursor-pointer">Mobile</button>
+          <div class="subtabs" style="margin-top:12px;">
+            <button type="button" class="primary" onclick="runMusicGPT()">Generate Track (MusicAI)</button>
+            <button type="button" class="amber" onclick="copyMusicCurl()">Copy Termux cURL</button>
+          </div>
+          <div class="card-item">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <strong style="font-size:12px;color:var(--amber);">6-Stem Extraction (/v2/Extraction)</strong>
+              <span class="muted">20/hr · 100/day free</span>
+            </div>
+            <label>Source Audio URL (.mp3 / .wav)</label>
+            <input id="stemAudioUrl" placeholder="https://cdn1.musicgpt.com/conversions/...mp3" />
+            <div class="subtabs" style="margin-top:8px;margin-bottom:0;">
+              <button type="button" onclick="runStemExtraction()">Split 6 Stems</button>
+              <button type="button" onclick="copyStemCurl()">Copy Stem cURL</button>
+            </div>
+          </div>
+          <div id="audioResultBox" class="card-item hidden">
+            <div style="font-size:12px;font-weight:700;color:var(--ok);margin-bottom:6px;" id="audioResultTitle">Track Ready</div>
+            <audio id="audioPlayer" controls style="width:100%;"></audio>
           </div>
         </div>
 
-        <!-- TAB 1: LIVE PREVIEW -->
-        <div id="panel-preview" class="flex-1 bg-[#121316] p-3 sm:p-5 flex justify-center overflow-auto">
-          <div id="previewViewport" class="w-full transition-all duration-200 bg-[#F6F6F4] text-[#16171a] rounded-lg p-5 shadow-inner flex flex-col">
-            <div class="flex flex-wrap items-end justify-between gap-3 mb-5">
-              <div>
-                <div class="text-[11px] uppercase tracking-wider text-[#777]">Outstanding Balance</div>
-                <div id="outstandingTotal" class="text-[28px] font-semibold tracking-tight">$18,420.00</div>
-              </div>
-              <div class="flex items-center gap-2">
-                <select id="statusFilter" class="px-3 py-2 rounded-lg bg-white border border-[#e6e6e2] text-[12px] text-[#16171a] focus:outline-none">
-                  <option value="ALL">All Statuses</option>
-                  <option value="Overdue">Overdue</option>
-                  <option value="Sent">Sent</option>
-                  <option value="Paid">Paid</option>
-                </select>
-                <button id="toggleNewInvoiceBtn" class="px-4 py-2 rounded-lg bg-[#16171a] text-white text-[12px] font-medium hover:opacity-90 cursor-pointer">
-                  + New invoice
-                </button>
-              </div>
+        <div id="viewVR" class="hidden">
+          <div class="vr-stage" id="vrViewport" onpointermove="tiltVR(event)">
+            <div class="vr-orb" id="vrOrb">360° STAGE</div>
+            <div class="vr-hud">
+              <span id="vrCoords">Pitch: 0° · Yaw: 0°</span>
+              <span style="color:var(--accent);cursor:pointer;" onclick="toggleVRFullscreen()">[ Fullscreen VR ]</span>
             </div>
-
-            <!-- Inline New Invoice Form (Hidden by default) -->
-            <form id="newInvoiceForm" class="hidden mb-4 p-3.5 rounded-lg bg-white border border-[#deded8] grid grid-cols-1 sm:grid-cols-4 gap-2.5 text-[12px]">
-              <input id="clientInput" required placeholder="Client name (e.g. Kestrel Freight)" class="px-3 py-2 rounded border border-[#ddd] focus:outline-none focus:border-[#16171a]" />
-              <input id="amountInput" required type="number" step="0.01" min="1" placeholder="Amount (USD)" class="px-3 py-2 rounded border border-[#ddd] focus:outline-none focus:border-[#16171a]" />
-              <select id="newStatusInput" class="px-3 py-2 rounded border border-[#ddd] focus:outline-none">
-                <option value="Sent">Sent</option>
-                <option value="Overdue">Overdue</option>
-                <option value="Paid">Paid</option>
+          </div>
+          <div class="row2">
+            <div>
+              <label>Scene Preset</label>
+              <select id="vrPreset" onchange="buildVideoPrompt()">
+                <option value="dog_squad">Tactical Dog Squad (Upright + Pants + Pack &amp; Paw)</option>
+                <option value="bacon_bros">Bacon Brothers Delivery Room Tall-Tale</option>
+                <option value="unbroken_saga">Unbroken Saga Subterranean Cavern</option>
+                <option value="synth_neon">Obsidian &amp; Amber 80s Synth Stage</option>
               </select>
-              <button type="submit" class="px-3 py-2 rounded bg-[#FF5E1E] text-white font-semibold hover:brightness-105 cursor-pointer">
-                Add Invoice
-              </button>
-            </form>
-
-            <!-- Invoices Table -->
-            <div class="bg-white rounded-lg border border-[#e6e6e2] text-[12px] overflow-x-auto">
-              <div class="grid grid-cols-[1fr_1.4fr_1fr_.9fr] px-4 py-2 text-[#888] border-b border-[#eee] font-medium min-w-[420px]">
-                <span>Invoice</span>
-                <span>Client</span>
-                <span>Amount</span>
-                <span>Status (tap to cycle)</span>
-              </div>
-              <div id="invoiceRows" class="divide-y divide-[#f1f1f1] min-w-[420px]"></div>
             </div>
-
-            <!-- Optional Webhook Banner (Added when user triggers Add Webhook Listener) -->
-            <div id="webhookBanner" class="hidden mt-4 px-3.5 py-2.5 rounded-lg bg-[#16171a] text-[#F6F6F4] text-[11px] font-mono flex items-center justify-between">
-              <span>POST /api/webhooks/stripe → active (listening for invoice.paid)</span>
-              <span class="text-[#3DD68C]">200 OK</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- TAB 2: SELF-HEALING LOG -->
-        <div id="panel-log" class="hidden flex-1 bg-ob p-4 font-mono text-[12px] space-y-2.5 overflow-auto">
-          <div class="text-mut text-[11px] uppercase tracking-wider mb-2">Autonomous Repair &amp; Verification Trace</div>
-          <div id="healLogList" class="space-y-2"></div>
-        </div>
-
-        <!-- TAB 3: CODE TREE -->
-        <div id="panel-code" class="hidden flex-1 bg-ob grid grid-cols-1 sm:grid-cols-[200px_1fr] overflow-auto">
-          <div id="fileTreeList" class="border-b sm:border-b-0 sm:border-r border-line p-3 font-mono text-[12px] space-y-1"></div>
-          <pre id="fileContentViewer" class="p-4 font-mono text-[11.5px] text-[#d6d8e0] overflow-auto leading-relaxed whitespace-pre-wrap"></pre>
-        </div>
-      </div>
-
-      <!-- 4-Step Execution Timeline -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div id="step-0" class="bg-card rounded-[10px] p-3 border border-line transition">
-          <div class="w-2 h-2 rounded-full bg-ok mb-2"></div>
-          <div class="font-medium">Scaffolded</div>
-          <div id="step-time-0" class="font-mono text-[11px] text-mut">00:14</div>
-        </div>
-        <div id="step-1" class="bg-card rounded-[10px] p-3 border border-line transition">
-          <div class="w-2 h-2 rounded-full bg-ok mb-2"></div>
-          <div class="font-medium">Schema Migrated</div>
-          <div id="step-time-1" class="font-mono text-[11px] text-mut">00:41</div>
-        </div>
-        <div id="step-2" class="bg-card rounded-[10px] p-3 border border-line transition">
-          <div class="w-2 h-2 rounded-full bg-ok mb-2"></div>
-          <div class="font-medium">Tests Passed <span class="text-ok text-[11px]">(Self-healed)</span></div>
-          <div id="step-time-2" class="font-mono text-[11px] text-mut">02:08</div>
-        </div>
-        <div id="step-3" class="bg-card rounded-[10px] p-3 border border-acc/50 transition">
-          <div class="w-2 h-2 rounded-full bg-acc mb-2 shadow-[0_0_10px_#FF5E1E]"></div>
-          <div class="font-medium">Live Sandbox Deployed</div>
-          <div id="step-time-3" class="font-mono text-[11px] text-mut">02:36</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Right Column: Gatekeeper, Ledger, Export Mode, Autonomous Goal Bar -->
-    <aside class="flex flex-col gap-4">
-      <!-- Permission Gatekeeper -->
-      <div class="gl bg-card rounded-[10px] p-4">
-        <div class="flex justify-between items-center mb-3">
-          <span class="font-semibold text-[15px]">Permission Gatekeeper</span>
-          <span id="gatekeeperCount" class="text-[12px] text-ok font-mono">2/3 Active</span>
-        </div>
-
-        <div class="divide-y divide-line">
-          <div class="flex justify-between items-center py-2">
             <div>
-              <div>OpenAI / LLM Key</div>
-              <div class="text-[11px] text-mut font-mono">Stored in browser only</div>
+              <label>Camera Motion</label>
+              <select id="vrCamera" onchange="buildVideoPrompt()">
+                <option value="360° slow orbital dolly-in, low-angle heroic framing">360° Orbital Dolly-In</option>
+                <option value="handheld tactical bodycam push, gritty motion blur">Tactical Bodycam Push</option>
+                <option value="wide panoramic VR crane sweep, dramatic rim lighting">Panoramic VR Crane Sweep</option>
+              </select>
             </div>
-            <button data-key="openai" class="key-toggle-btn text-[12px] px-2.5 py-1 rounded border border-line hover:border-acc text-ok cursor-pointer">
-              Verified
-            </button>
           </div>
-          <div class="flex justify-between items-center py-2">
-            <div>
-              <div>Stripe Test Key</div>
-              <div class="text-[11px] text-mut font-mono">Sandbox webhook mode</div>
-            </div>
-            <button data-key="stripe" class="key-toggle-btn text-[12px] px-2.5 py-1 rounded border border-line hover:border-acc text-ok cursor-pointer">
-              Verified
-            </button>
+          <label>Scene Action / Beat Sync Notes</label>
+          <input id="vrAction" value="Standing upright on hind legs in tactical pants, scanning horizon at dusk" oninput="buildVideoPrompt()" />
+          <label>Compiled Video / Image Generation Prompt</label>
+          <textarea id="vrPromptOutput"></textarea>
+          <div class="subtabs" style="margin-top:8px;">
+            <button type="button" class="primary" onclick="copyText('vrPromptOutput', 'VR Scene Prompt')">Copy Prompt</button>
+            <button type="button" onclick="saveSceneCue()">Save Cue to Timeline</button>
           </div>
-          <div class="flex justify-between items-center py-2">
-            <div>
-              <div>GitHub PAT</div>
-              <div class="text-[11px] text-mut font-mono">Optional repo sync</div>
-            </div>
-            <button data-key="github" class="key-toggle-btn text-[12px] px-2.5 py-1 rounded border border-line hover:border-acc text-mut cursor-pointer">
-              Optional
-            </button>
-          </div>
+          <div id="cueList"></div>
         </div>
-      </div>
-
-      <!-- Silent Assumption Ledger -->
-      <div class="gl bg-card rounded-[10px] p-4">
-        <div class="font-semibold text-[15px] mb-3">Silent Assumption Ledger</div>
-        <div class="divide-y divide-line">
-          <div class="flex justify-between items-center py-2 gap-2">
-            <span><span class="text-mut">Stack:</span> <strong id="assumption-stack" class="font-normal text-white">Single-File HTML + Tailwind</strong></span>
-            <button data-assumption="stack" class="override-btn text-[12px] text-mut hover:text-acc cursor-pointer">Override</button>
-          </div>
-          <div class="flex justify-between items-center py-2 gap-2">
-            <span><span class="text-mut">Database:</span> <strong id="assumption-db" class="font-normal text-white">LocalStorage + SQLite Schema</strong></span>
-            <button data-assumption="db" class="override-btn text-[12px] text-mut hover:text-acc cursor-pointer">Override</button>
-          </div>
-          <div class="flex justify-between items-center py-2 gap-2">
-            <span><span class="text-mut">Auth:</span> <strong id="assumption-auth" class="font-normal text-white">Local session</strong></span>
-            <button data-assumption="auth" class="override-btn text-[12px] text-mut hover:text-acc cursor-pointer">Override</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Export Mode -->
-      <div class="gl bg-card rounded-[10px] p-4">
-        <div class="font-semibold text-[15px] mb-3">Export Mode</div>
-        <div class="grid grid-cols-2 p-1 rounded-full bg-ob text-[12px] mb-3">
-          <button id="modeOneTimeBtn" class="py-1.5 text-center rounded-full text-mut hover:text-white cursor-pointer">One-Time Export</button>
-          <button id="modeContinuousBtn" class="py-1.5 text-center rounded-full bg-acc text-ob font-semibold cursor-pointer">Continuous Sync</button>
-        </div>
-
-        <div class="flex flex-wrap gap-2 mb-3 text-[12px]">
-          <button id="dlTermuxBtn" class="px-3 py-1 rounded-full border border-line hover:border-acc font-mono text-mut hover:text-white cursor-pointer">
-            Termux .sh
-          </button>
-          <button id="dlHtmlBtn" class="px-3 py-1 rounded-full border border-line hover:border-acc text-mut hover:text-white cursor-pointer">
-            Standalone HTML
-          </button>
-          <button id="dlSchemaBtn" class="px-3 py-1 rounded-full border border-line hover:border-acc text-mut hover:text-white cursor-pointer">
-            schema.sql
-          </button>
-        </div>
-
-        <div class="flex items-center gap-2 rounded-[7px] bg-ob px-3 py-2 text-[12px]">
-          <span id="syncIndicatorDot" class="w-1.5 h-1.5 rounded-full bg-acc"></span>
-          <span class="text-mut">Target:</span>
-          <input
-            id="repoTargetInput"
-            value="github.com/user/invoiceops"
-            aria-label="GitHub Repository Target"
-            class="bg-transparent font-mono text-white focus:outline-none flex-1 min-w-0"
-          />
-        </div>
-      </div>
-
-      <!-- Autonomous Goal Bar -->
-      <div class="mt-auto gl bg-card rounded-[10px] p-3 border border-line">
-        <div class="text-[11px] uppercase tracking-[.14em] text-mut mb-2">Autonomous Goal Bar</div>
-        <form id="goalForm" class="flex items-center gap-2 h-10 rounded-full bg-ob pl-4 pr-1 mb-2.5 border border-transparent focus-within:border-acc/60">
-          <input
-            id="goalInput"
-            placeholder="Direct the agent for the next milestone..."
-            class="flex-1 bg-transparent text-white placeholder:text-mut focus:outline-none text-[12.5px] min-w-0"
-          />
-          <button
-            type="submit"
-            aria-label="Send Goal"
-            class="w-8 h-8 rounded-full bg-acc grid place-items-center hover:brightness-110 shrink-0 cursor-pointer"
-          >
-            <svg width="14" height="14" fill="none" stroke="#0B0C0E" stroke-width="2">
-              <path d="M2 7h10M8 3l4 4-4 4"></path>
-            </svg>
-          </button>
-        </form>
-        <div class="flex flex-wrap gap-2 text-[12px]">
-          <button type="button" data-preset="Add Webhook Listener" class="preset-chip px-3 py-1 rounded-full border border-line hover:border-acc text-mut hover:text-white cursor-pointer">
-            Add Webhook Listener
-          </button>
-          <button type="button" data-preset="Run E2E Tests" class="preset-chip px-3 py-1 rounded-full border border-line hover:border-acc text-mut hover:text-white cursor-pointer">
-            Run E2E Tests
-          </button>
-        </div>
-      </div>
-    </aside>
-  </main>
-
-  <!-- Export & Deploy Modal -->
-  <div id="exportModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
-    <div class="gl bg-card border border-line rounded-[12px] max-w-lg w-full p-5 space-y-4">
-      <div class="flex items-start justify-between">
-        <div>
-          <h2 class="text-[17px] font-semibold text-white">Export &amp; Deploy</h2>
-          <p id="exportSummaryText" class="text-[12px] text-mut mt-0.5">InvoiceOps Agent · self-contained bundle · keys are never included</p>
-        </div>
-        <button id="closeExportBtn" class="text-mut hover:text-white text-[18px] leading-none px-2 cursor-pointer">&times;</button>
-      </div>
-
-      <div class="grid grid-cols-3 gap-2 text-[12px]">
-        <button id="modalDlHtml" class="p-2.5 rounded-lg bg-ob border border-line hover:border-acc text-center cursor-pointer">
-          <div class="font-semibold text-white">index.html</div>
-          <div class="text-[11px] text-mut">Zero-build app</div>
-        </button>
-        <button id="modalDlTermux" class="p-2.5 rounded-lg bg-ob border border-line hover:border-acc text-center cursor-pointer">
-          <div class="font-semibold text-white font-mono">termux-setup.sh</div>
-          <div class="text-[11px] text-mut">Android local run</div>
-        </button>
-        <button id="modalDlSchema" class="p-2.5 rounded-lg bg-ob border border-line hover:border-acc text-center cursor-pointer">
-          <div class="font-semibold text-white font-mono">schema.sql</div>
-          <div class="text-[11px] text-mut">SQLite tables</div>
-        </button>
-      </div>
-
-      <div>
-        <div class="flex justify-between items-center text-[11px] text-mut mb-1.5">
-          <span>Git Commands (keys stripped)</span>
-          <button id="copyGitBtn" class="text-acc hover:underline cursor-pointer">Copy commands</button>
-        </div>
-        <pre id="gitCommandsBox" class="p-3 rounded-lg bg-ob border border-line font-mono text-[11px] text-[#d6d8e0] overflow-x-auto">git init -b main
-git add .
-git commit -m "AgentForge build of InvoiceOps Agent"
-git remote add origin https://github.com/user/invoiceops.git
-git push -u origin main</pre>
-      </div>
-
-      <div class="flex justify-end gap-2 pt-1">
-        <button id="closeExportFooterBtn" class="px-4 py-2 rounded-full border border-line text-mut hover:text-white text-[12px] cursor-pointer">
-          Close
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    // --- Initial State (Persisted in localStorage) ---
-    const STORAGE_KEY = 'agentforge_obsidian_state_v1';
-    const defaultInvoices = [
-      { id: 'INV-1042', client: 'Halden Freight Co.', amount: 6200.00, status: 'Overdue' },
-      { id: 'INV-1041', client: 'Marrow & Pike', amount: 4870.00, status: 'Sent' },
-      { id: 'INV-1040', client: 'Quillon Studio', amount: 7350.00, status: 'Sent' },
-      { id: 'INV-1039', client: 'Bracken Labs', amount: 2140.00, status: 'Paid' },
-    ];
-
-    const defaultHealLogs = [
-      { time: '01:12', tag: 'AUTO-FIX', msg: 'Detected currency float drift in outstanding balance reducer; switched to integer cents arithmetic.' },
-      { time: '01:54', tag: 'AUTO-FIX', msg: 'Added mobile horizontal overflow guard on invoice grid for 360px Android viewports.' },
-    ];
-
-    const assumptionOptions = {
-      stack: ['Single-File HTML + Tailwind', 'React + Vite + Tailwind', 'Termux Node + SQLite'],
-      db: ['LocalStorage + SQLite Schema', 'SQLite memory', 'IndexedDB offline store'],
-      auth: ['Local session', 'GitHub PAT header', 'Single-user PIN lock'],
-    };
-
-    let state = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null') || {
-      projectName: 'InvoiceOps Agent',
-      repoTarget: 'github.com/user/invoiceops',
-      invoices: defaultInvoices,
-      healLogs: defaultHealLogs,
-      webhookActive: false,
-      continuousSync: true,
-      keys: { openai: true, stripe: true, github: false },
-      assumptions: { stack: 0, db: 0, auth: 0 },
-    };
-
-    function saveState() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    }
-
-    // --- Render Invoices ---
-    function formatMoney(num) {
-      return '$' + Number(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
-
-    function renderInvoices() {
-      const filter = document.getElementById('statusFilter').value;
-      const rowsEl = document.getElementById('invoiceRows');
-      rowsEl.innerHTML = '';
-
-      let outstanding = 0;
-      state.invoices.forEach((inv) => {
-        if (inv.status !== 'Paid') outstanding += Number(inv.amount);
-      });
-      document.getElementById('outstandingTotal').textContent = formatMoney(outstanding);
-
-      const filtered = filter === 'ALL'
-        ? state.invoices
-        : state.invoices.filter((i) => i.status === filter);
-
-      filtered.forEach((inv) => {
-        const colorClass =
-          inv.status === 'Overdue' ? 'text-[#c2410c] font-medium' :
-          inv.status === 'Paid' ? 'text-[#15803d] font-medium' :
-          'text-[#666]';
-
-        const row = document.createElement('div');
-        row.className = 'grid grid-cols-[1fr_1.4fr_1fr_.9fr] px-4 py-2.5 items-center hover:bg-[#fafaf8]';
-        row.innerHTML = `
-          <span class="font-mono">${inv.id}</span>
-          <span>${inv.client}</span>
-          <span>${formatMoney(inv.amount)}</span>
-          <button data-id="${inv.id}" class="status-cycle text-left ${colorClass} hover:underline cursor-pointer">${inv.status}</button>
-        `;
-        rowsEl.appendChild(row);
-      });
-
-      document.querySelectorAll('.status-cycle').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const order = ['Sent', 'Overdue', 'Paid'];
-          const item = state.invoices.find((x) => x.id === btn.dataset.id);
-          if (item) {
-            item.status = order[(order.indexOf(item.status) + 1) % order.length];
-            saveState();
-            renderInvoices();
-          }
-        });
-      });
-
-      document.getElementById('webhookBanner').classList.toggle('hidden', !state.webhookActive);
-    }
-
-    // --- Render Self-Healing Log ---
-    function renderHealLogs() {
-      const list = document.getElementById('healLogList');
-      list.innerHTML = state.healLogs.map((entry) => `
-        <div class="p-3 rounded-lg bg-card border border-line flex items-start gap-3">
-          <span class="px-2 py-0.5 rounded bg-acc/15 text-acc text-[10.5px] shrink-0">${entry.tag}</span>
-          <div class="flex-1 text-[#d6d8e0]">${entry.msg}</div>
-          <span class="text-mut text-[11px] shrink-0">${entry.time}</span>
-        </div>
-      `).join('');
-      document.getElementById('healCountBadge').textContent = `${state.healLogs.length} auto-fixed`;
-    }
-
-    // --- Render Virtual Code Tree ---
-    function getVirtualFiles() {
-      const slug = state.projectName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-      return {
-        'index.html': `<!-- ${state.projectName} — Obsidian Studio Build -->\n<!-- Zero-dependency browser app ready for GitHub Pages -->\n<div id="app" data-project="${slug}">\n  <h1>${state.projectName}</h1>\n  <p>Outstanding: ${document.getElementById('outstandingTotal')?.textContent || '$18,420.00'}</p>\n</div>`,
-        'schema.sql': `CREATE TABLE IF NOT EXISTS invoices (\n  id TEXT PRIMARY KEY,\n  client TEXT NOT NULL,\n  amount_cents INTEGER NOT NULL,\n  status TEXT CHECK(status IN ('Sent','Overdue','Paid')) DEFAULT 'Sent',\n  created_at TEXT DEFAULT CURRENT_TIMESTAMP\n);\n\nINSERT INTO invoices (id, client, amount_cents, status) VALUES\n${state.invoices.map(i => `  ('${i.id}', '${i.client.replace(/'/g, "''")}', ${Math.round(i.amount * 100)}, '${i.status}')`).join(',\n')};`,
-        'termux-setup.sh': `#!/data/data/com.termux/files/usr/bin/bash\npkg update -y && pkg install -y python git\necho "Serving ${state.projectName} on http://127.0.0.1:8080"\npython -m http.server 8080`,
-        'agentforge.json': JSON.stringify({
-          app: 'AgentForge',
-          workspace: 'Obsidian Studio',
-          project: state.projectName,
-          webhookListener: state.webhookActive,
-          continuousSync: state.continuousSync,
-          repo: state.repoTarget,
-        }, null, 2),
-      };
-    }
-
-    let activeFileName = 'schema.sql';
-    function renderCodeTree() {
-      const files = getVirtualFiles();
-      const treeEl = document.getElementById('fileTreeList');
-      const viewerEl = document.getElementById('fileContentViewer');
-      treeEl.innerHTML = '';
-
-      Object.keys(files).forEach((fname) => {
-        const btn = document.createElement('button');
-        btn.className = `w-full text-left px-2.5 py-1.5 rounded cursor-pointer ${
-          fname === activeFileName ? 'bg-acc/15 text-acc font-medium' : 'text-mut hover:text-white'
-        }`;
-        btn.textContent = fname;
-        btn.addEventListener('click', () => {
-          activeFileName = fname;
-          renderCodeTree();
-        });
-        treeEl.appendChild(btn);
-      });
-
-      viewerEl.textContent = files[activeFileName] || '';
-    }
-
-    // --- Tabs & Viewport Toggles ---
-    document.querySelectorAll('.tab-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const target = btn.dataset.tab;
-        document.querySelectorAll('.tab-btn').forEach((b) => {
-          b.classList.remove('border-acc', 'text-white', 'font-medium');
-          b.classList.add('border-transparent', 'text-mut');
-        });
-        btn.classList.add('border-acc', 'text-white', 'font-medium');
-        btn.classList.remove('border-transparent', 'text-mut');
-
-        ['preview', 'log', 'code'].forEach((p) => {
-          document.getElementById(`panel-${p}`).classList.toggle('hidden', p !== target);
-        });
-        if (target === 'code') renderCodeTree();
-      });
-    });
-
-    document.getElementById('viewDesktopBtn').addEventListener('click', () => {
-      document.getElementById('previewViewport').classList.remove('max-w-[390px]');
-      document.getElementById('viewDesktopBtn').classList.add('bg-line', 'text-white');
-      document.getElementById('viewDesktopBtn').classList.remove('text-mut');
-      document.getElementById('viewMobileBtn').classList.remove('bg-line', 'text-white');
-      document.getElementById('viewMobileBtn').classList.add('text-mut');
-    });
-
-    document.getElementById('viewMobileBtn').addEventListener('click', () => {
-      document.getElementById('previewViewport').classList.add('max-w-[390px]');
-      document.getElementById('viewMobileBtn').classList.add('bg-line', 'text-white');
-      document.getElementById('viewMobileBtn').classList.remove('text-mut');
-      document.getElementById('viewDesktopBtn').classList.remove('bg-line', 'text-white');
-      document.getElementById('viewDesktopBtn').classList.add('text-mut');
-    });
-
-    // --- Invoice Form & Filter ---
-    document.getElementById('statusFilter').addEventListener('change', renderInvoices);
-    document.getElementById('toggleNewInvoiceBtn').addEventListener('click', () => {
-      document.getElementById('newInvoiceForm').classList.toggle('hidden');
-    });
-
-    document.getElementById('newInvoiceForm').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const client = document.getElementById('clientInput').value.trim();
-      const amount = parseFloat(document.getElementById('amountInput').value);
-      const status = document.getElementById('newStatusInput').value;
-      if (!client || isNaN(amount)) return;
-
-      const nextNum = 1043 + state.invoices.length;
-      state.invoices.unshift({
-        id: `INV-${nextNum}`,
-        client,
-        amount,
-        status,
-      });
-      saveState();
-      renderInvoices();
-      e.target.reset();
-      e.target.classList.add('hidden');
-    });
-
-    // --- Permission Gatekeeper & Assumptions ---
-    function renderGatekeeper() {
-      let activeCount = 0;
-      document.querySelectorAll('.key-toggle-btn').forEach((btn) => {
-        const k = btn.dataset.key;
-        const isOn = !!state.keys[k];
-        if (isOn) activeCount++;
-        btn.textContent = isOn ? 'Verified' : 'Optional';
-        btn.classList.toggle('text-ok', isOn);
-        btn.classList.toggle('text-mut', !isOn);
-      });
-      document.getElementById('gatekeeperCount').textContent = `${activeCount}/3 Active`;
-    }
-
-    document.querySelectorAll('.key-toggle-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const k = btn.dataset.key;
-        state.keys[k] = !state.keys[k];
-        saveState();
-        renderGatekeeper();
-      });
-    });
-
-    function renderAssumptions() {
-      document.getElementById('assumption-stack').textContent = assumptionOptions.stack[state.assumptions.stack];
-      document.getElementById('assumption-db').textContent = assumptionOptions.db[state.assumptions.db];
-      document.getElementById('assumption-auth').textContent = assumptionOptions.auth[state.assumptions.auth];
-    }
-
-    document.querySelectorAll('.override-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const field = btn.dataset.assumption;
-        state.assumptions[field] = (state.assumptions[field] + 1) % assumptionOptions[field].length;
-        saveState();
-        renderAssumptions();
-      });
-    });
-
-    // --- Export Mode & Downloads ---
-    function renderExportMode() {
-      const cont = state.continuousSync;
-      const btnCont = document.getElementById('modeContinuousBtn');
-      const btnOne = document.getElementById('modeOneTimeBtn');
-      btnCont.className = cont
-        ? 'py-1.5 text-center rounded-full bg-acc text-ob font-semibold cursor-pointer'
-        : 'py-1.5 text-center rounded-full text-mut hover:text-white cursor-pointer';
-      btnOne.className = !cont
-        ? 'py-1.5 text-center rounded-full bg-acc text-ob font-semibold cursor-pointer'
-        : 'py-1.5 text-center rounded-full text-mut hover:text-white cursor-pointer';
-      document.getElementById('syncIndicatorDot').className = cont
-        ? 'w-1.5 h-1.5 rounded-full bg-acc'
-        : 'w-1.5 h-1.5 rounded-full bg-mut';
-    }
-
-    document.getElementById('modeContinuousBtn').addEventListener('click', () => {
-      state.continuousSync = true;
-      saveState();
-      renderExportMode();
-    });
-
-    document.getElementById('modeOneTimeBtn').addEventListener('click', () => {
-      state.continuousSync = false;
-      saveState();
-      renderExportMode();
-    });
-
-    function downloadTextFile(filename, content, mime = 'text/plain') {
-      const blob = new Blob([content], { type: mime });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    }
-
-    function downloadCurrentHtml() {
-      const html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-      downloadTextFile('index.html', html, 'text/html');
-    }
-
-    document.getElementById('dlTermuxBtn').addEventListener('click', () => {
-      downloadTextFile('termux-setup.sh', getVirtualFiles()['termux-setup.sh'], 'application/x-sh');
-    });
-    document.getElementById('dlHtmlBtn').addEventListener('click', downloadCurrentHtml);
-    document.getElementById('dlSchemaBtn').addEventListener('click', () => {
-      downloadTextFile('schema.sql', getVirtualFiles()['schema.sql'], 'application/sql');
-    });
-
-    // --- Autonomous Goal Bar Execution ---
-    function runAutonomousGoal(promptText) {
-      const clean = promptText.trim();
-      if (!clean) return;
-
-      const now = new Date();
-      const stamp = `${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-
-      if (/webhook/i.test(clean)) {
-        state.webhookActive = true;
-        state.healLogs.unshift({
-          time: stamp,
-          tag: 'MILESTONE',
-          msg: 'Mounted POST /api/webhooks/stripe listener and bound invoice status auto-reconciliation.',
-        });
-      } else if (/test|e2e/i.test(clean)) {
-        state.healLogs.unshift({
-          time: stamp,
-          tag: 'E2E PASS',
-          msg: 'Verified 6/6 assertions: balance sum, status filter, new invoice insert, and dark-mode contrast.',
-        });
-      } else {
-        state.healLogs.unshift({
-          time: stamp,
-          tag: 'GOAL EXEC',
-          msg: `Executed milestone: "${clean}" — updated sandbox state and verified schema integrity.`,
-        });
-      }
-
-      document.getElementById('step-time-3').textContent = stamp;
-      document.getElementById('testStatusText').textContent = 'All 6 Tests Passing';
-      saveState();
-      renderInvoices();
-      renderHealLogs();
-      renderCodeTree();
-    }
-
-    document.getElementById('goalForm').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const input = document.getElementById('goalInput');
-      runAutonomousGoal(input.value);
-      input.value = '';
-    });
-
-    document.querySelectorAll('.preset-chip').forEach((chip) => {
-      chip.addEventListener('click', () => {
-        runAutonomousGoal(chip.dataset.preset);
-      });
-    });
-
-    // --- Project Name & Repo Sync ---
-    document.getElementById('projectNameInput').addEventListener('input', (e) => {
-      state.projectName = e.target.value || 'InvoiceOps Agent';
-      saveState();
-    });
-
-    document.getElementById('repoTargetInput').addEventListener('input', (e) => {
-      state.repoTarget = e.target.value || 'github.com/user/invoiceops';
-      saveState();
-    });
-
-    // --- Export Modal Controls ---
-    const modal = document.getElementById('exportModal');
-    document.getElementById('openExportBtn').addEventListener('click', () => {
-      document.getElementById('exportSummaryText').textContent =
-        `${state.projectName} · self-contained bundle · keys are never included`;
-      document.getElementById('gitCommandsBox').textContent =
-        `git init -b main\ngit add .\ngit commit -m "AgentForge build of ${state.projectName}"\ngit remote add origin https://${state.repoTarget}.git\ngit push -u origin main`;
-      modal.classList.remove('hidden');
-    });
-    document.getElementById('closeExportBtn').addEventListener('click', () => modal.classList.add('hidden'));
-    document.getElementById('closeExportFooterBtn').addEventListener('click', () => modal.classList.add('hidden'));
-    document.getElementById('modalDlHtml').addEventListener('click', downloadCurrentHtml);
-    document.getElementById('modalDlTermux').addEventListener('click', () => {
-      downloadTextFile('termux-setup.sh', getVirtualFiles()['termux-setup.sh'], 'application/x-sh');
-    });
-    document.getElementById('modalDlSchema').addEventListener('click', () => {
-      downloadTextFile('schema.sql', getVirtualFiles()['schema.sql'], 'application/sql');
-    });
-    document.getElementById('copyGitBtn').addEventListener('click', () => {
-      navigator.clipboard?.writeText(document.getElementById('gitCommandsBox').textContent);
-      document.getElementById('copyGitBtn').textContent = 'Copied!';
-      setTimeout(() => { document.getElementById('copyGitBtn').textContent = 'Copy commands'; }, 1500);
-    });
-
-    // --- Boot ---
-    document.getElementById('projectNameInput').value = state.projectName;
-    document.getElementById('repoTargetInput').value = state.repoTarget;
-    renderInvoices();
-    renderHealLogs();
-    renderGatekeeper();
-    renderAssumptions();
-    renderExportMode();
-  </script>
-</body>
-</html>
