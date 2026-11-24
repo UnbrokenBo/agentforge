@@ -175,6 +175,359 @@ Struck a match on his stubble in the county jail...</textarea>
               </select>
             </div>
           </div>
+                  <div id="viewSandbox" class="hidden">
+          <p class="muted" style="margin-top:0;">Load any HTML file from your phone or paste raw HTML below to test it inside the Desktop/Mobile viewport before deploying to GitHub.</p>
+          <div class="row2">
+            <div><label>Upload Local .html File</label><input type="file" id="htmlFileInput" accept=".html,.htm" onchange="loadLocalHtmlFile(event)" /></div>
+            <div>
+              <label>Or Load Live Hub Page</label>
+              <select id="hubPageSelect" onchange="loadHubIframe(this.value)">
+                <option value="">-- Choose Page --</option>
+                <option value="https://unbrokenbo.github.io/Unbroken-Ecosystem/projects.html">Unbroken-Ecosystem / projects.html</option>
+                <option value="https://unbrokenbo.github.io/Unbroken-Ecosystem/studio.html">Unbroken-Ecosystem / studio.html</option>
+                <option value="https://unbrokenbo.github.io/Unbroken-Ecosystem/reelroom.html">Unbroken-Ecosystem / reelroom.html</option>
+              </select>
+            </div>
+          </div>
+          <label>HTML Buffer (Editable &amp; Deployable)</label>
+          <textarea id="sandboxHtmlCode" style="min-height:110px;font-family:monospace;font-size:12px;" placeholder="Paste or upload app HTML here"></textarea>
+          <div class="subtabs" style="margin-top:8px;">
+            <button type="button" class="primary" onclick="renderSandboxCode()">Run in Preview</button>
+            <button type="button" class="amber" onclick="downloadSandboxHtml()">Download .html</button>
+          </div>
+          <iframe id="sandboxFrame" class="sandbox-frame" sandbox="allow-scripts allow-forms allow-modals"></iframe>
+        </div>
+      </div>
+    </section>
+
+    <aside style="display:flex;flex-direction:column;gap:14px;">
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title">Permission Gatekeeper (localStorage)</span>
+          <span class="muted">Never sent to GitHub</span>
+        </div>
+        <label>MusicGPT API Key ("Shady Bacon")</label>
+        <div class="row2">
+          <input type="password" id="keyMusicGPT" placeholder="Paste MusicGPT key..." oninput="saveKeys()" />
+          <span class="status-badge" id="statusMusicGPT" style="align-self:center;text-align:center;">Missing</span>
+        </div>
+        <label>Freesound API Key</label>
+        <div class="row2">
+          <input type="password" id="keyFreesound" placeholder="Paste Freesound key..." oninput="saveKeys()" />
+          <span class="status-badge" id="statusFreesound" style="align-self:center;text-align:center;">Missing</span>
+        </div>
+        <label>GitHub Personal Access Token (Fine-Grained Contents R/W)</label>
+        <div class="row2">
+          <input type="password" id="keyGitHub" placeholder="github_pat_..." oninput="saveKeys()" />
+          <span class="status-badge" id="statusGitHub" style="align-self:center;text-align:center;">Missing</span>
+        </div>
+      </div>
+
+      <div class="panel" id="deployPanel">
+        <div class="panel-head">
+          <span class="panel-title">Direct GitHub App Deployer</span>
+          <span class="pill">Live REST API</span>
+        </div>
+        <p class="muted" style="margin-top:0;">Pushes the HTML in your App Sandbox Tester buffer straight to GitHub Pages.</p>
+        <div class="row2">
+          <div><label>Owner</label><input id="ghOwner" value="UnbrokenBo" /></div>
+          <div><label>Repository</label><input id="ghRepo" value="Unbroken-Ecosystem" /></div>
+        </div>
+        <div class="row2">
+          <div><label>Target File Path</label><input id="ghPath" value="vr-studio.html" /></div>
+          <div><label>Commit Message</label><input id="ghMessage" value="Deploy app from AgentForge Studio" /></div>
+        </div>
+        <div class="subtabs" style="margin-top:12px;margin-bottom:0;">
+          <button type="button" class="primary" onclick="deployToGitHub()">Deploy Buffer to GitHub</button>
+          <button type="button" onclick="loadCurrentStudioIntoSandbox()">Load Studio into Buffer</button>
+        </div>
+        <div id="deployResult" class="muted" style="margin-top:8px;"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title">Self-Healing &amp; Execution Log</span>
+          <button type="button" onclick="clearLog()" style="padding:4px 8px;font-size:11px;">Clear</button>
+        </div>
+        <div class="log-box" id="logBox"></div>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    const STORAGE_KEYS = { music: 'af_musicgpt_key', freesound: 'af_freesound_key', github: 'af_github_pat', cues: 'af_vr_cues' };
+
+    function logEvent(msg, level = 'ok') {
+      const box = document.getElementById('logBox');
+      const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const line = document.createElement('div');
+      line.className = 'log-line';
+      line.innerHTML = `<span class="muted">[${time}]</span> <span class="${level}">${msg}</span>`;
+      box.prepend(line);
+    }
+
+    function clearLog() { document.getElementById('logBox').innerHTML = ''; logEvent('Log cleared.', 'ok'); }
+
+    function saveKeys() {
+      const m = document.getElementById('keyMusicGPT').value.trim();
+      const f = document.getElementById('keyFreesound').value.trim();
+      const g = document.getElementById('keyGitHub').value.trim();
+      localStorage.setItem(STORAGE_KEYS.music, m);
+      localStorage.setItem(STORAGE_KEYS.freesound, f);
+      localStorage.setItem(STORAGE_KEYS.github, g);
+      updateBadge('statusMusicGPT', m); updateBadge('statusFreesound', f); updateBadge('statusGitHub', g);
+    }
+
+    function updateBadge(id, val) {
+      const el = document.getElementById(id);
+      el.textContent = val ? 'Stored Locally' : 'Missing';
+      el.style.color = val ? '#39FF14' : '#C46A28';
+    }
+
+    function loadKeys() {
+      ['MusicGPT', 'Freesound', 'GitHub'].forEach(k => {
+        const keyMap = { MusicGPT: STORAGE_KEYS.music, Freesound: STORAGE_KEYS.freesound, GitHub: STORAGE_KEYS.github };
+        const val = localStorage.getItem(keyMap[k]) || '';
+        document.getElementById('key' + k).value = val;
+        updateBadge('status' + k, val);
+      });
+    }
+
+    function setViewport(mode) {
+      const wrap = document.getElementById('stageWrap');
+      document.getElementById('btnDesktop').classList.toggle('active-tab', mode === 'desktop');
+      document.getElementById('btnMobile').classList.toggle('active-tab', mode === 'mobile');
+      wrap.classList.toggle('mobile-sim', mode === 'mobile');
+      logEvent(`Viewport switched to ${mode.toUpperCase()} preview.`, 'ok');
+    }
+
+    function switchStageTab(tab) {
+      ['music', 'vr', 'sandbox'].forEach(t => {
+        document.getElementById('view' + t.charAt(0).toUpperCase() + t.slice(1)).classList.toggle('hidden', t !== tab);
+      });
+      document.getElementById('tabMusic').classList.toggle('active-tab', tab === 'music');
+      document.getElementById('tabVR').classList.toggle('active-tab', tab === 'vr');
+      document.getElementById('tabSandbox').classList.toggle('active-tab', tab === 'sandbox');
+    }
+
+    function scrollToDeploy() { document.getElementById('deployPanel').scrollIntoView({ behavior: 'smooth' }); }
+
+    async function runMusicGPT() {
+      const key = localStorage.getItem(STORAGE_KEYS.music);
+      if (!key) { logEvent('Missing MusicGPT key in Permission Gatekeeper.', 'warn'); return; }
+      const payload = {
+        prompt: document.getElementById('musicPrompt').value.trim(),
+        music_style: document.getElementById('musicStyle').value.trim(),
+        lyrics: document.getElementById('musicLyrics').value.trim(),
+        title: document.getElementById('trackTitle').value.trim(),
+        make_instrumental: document.getElementById('chkInstrumental').checked,
+        vocal_only: document.getElementById('chkVocalOnly').checked
+      };
+      logEvent(`Sending MusicAI request for "${payload.title}"...`, 'ok');
+      try {
+        const res = await fetch('https://api.musicgpt.com/api/public/v1/MusicAI', {
+          method: 'POST', headers: { 'Authorization': key, 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
+        logEvent(`MusicGPT Task queued: ${data.task_id || JSON.stringify(data)}`, 'ok');
+        if (data.conversion_path) showAudioResult(payload.title, data.conversion_path);
+      } catch (err) {
+        logEvent(`Browser blocked or failed (${err.message}). Use Copy Termux cURL to fire directly from Android Termux.`, 'warn');
+      }
+    }
+
+    function copyMusicCurl() {
+      const key = localStorage.getItem(STORAGE_KEYS.music) || 'YOUR_MUSICGPT_KEY';
+      const payload = JSON.stringify({
+        prompt: document.getElementById('musicPrompt').value.trim(),
+        music_style: document.getElementById('musicStyle').value.trim(),
+        lyrics: document.getElementById('musicLyrics').value.trim(),
+        title: document.getElementById('trackTitle').value.trim(),
+        make_instrumental: document.getElementById('chkInstrumental').checked,
+        vocal_only: document.getElementById('chkVocalOnly').checked
+      });
+      navigator.clipboard.writeText(`curl -X POST "https://api.musicgpt.com/api/public/v1/MusicAI" -H "Authorization: ${key}" -H "Content-Type: application/json" -d '${payload.replace(/'/g, "'\\''")}'`);
+      logEvent('Copied ready-to-run MusicAI Termux cURL command to clipboard.', 'ok');
+    }
+
+    async function runStemExtraction() {
+      const key = localStorage.getItem(STORAGE_KEYS.music);
+      const audioUrl = document.getElementById('stemAudioUrl').value.trim();
+      if (!key || !audioUrl) { logEvent('Need both MusicGPT key and Source Audio URL for 6-Stem split.', 'warn'); return; }
+      logEvent('Requesting 6_stems extraction...', 'ok');
+      try {
+        const res = await fetch('https://api.musicgpt.com/api/public/v2/Extraction', {
+          method: 'POST', headers: { 'Authorization': key, 'Content-Type': 'application/json' }, body: JSON.stringify({ audio_url: audioUrl, preset: '6_stems' })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
+        logEvent(`6-Stem extraction started: ${JSON.stringify(data)}`, 'ok');
+      } catch (err) {
+        logEvent(`Browser CORS/API notice (${err.message}). Tap Copy Stem cURL to run in Termux.`, 'warn');
+      }
+    }
+
+    function copyStemCurl() {
+      const key = localStorage.getItem(STORAGE_KEYS.music) || 'YOUR_MUSICGPT_KEY';
+      const audioUrl = document.getElementById('stemAudioUrl').value.trim() || 'https://example.com/track.mp3';
+      navigator.clipboard.writeText(`curl -X POST "https://api.musicgpt.com/api/public/v2/Extraction" -H "Authorization: ${key}" -H "Content-Type: application/json" -d '{"audio_url":"${audioUrl}","preset":"6_stems"}'`);
+      logEvent('Copied 6-Stem Extraction Termux cURL to clipboard.', 'ok');
+    }
+
+    function showAudioResult(title, url) {
+      document.getElementById('audioResultBox').classList.remove('hidden');
+      document.getElementById('audioResultTitle').textContent = title;
+      document.getElementById('audioPlayer').src = url;
+    }
+
+    function tiltVR(e) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width - 0.5) * 40;
+      const y = ((e.clientY - rect.top) / rect.height - 0.5) * -40;
+      document.getElementById('vrOrb').style.transform = `translate(${x}px, ${-y}px) scale(1.06)`;
+      document.getElementById('vrCoords').textContent = `Pitch: ${Math.round(y)}° · Yaw: ${Math.round(x)}°`;
+    }
+
+    function toggleVRFullscreen() {
+      const el = document.getElementById('vrViewport');
+      if (!document.fullscreenElement) el.requestFullscreen().catch(() => logEvent('Fullscreen blocked by browser gesture rule.', 'warn'));
+      else document.exitFullscreen();
+    }
+
+    function buildVideoPrompt() {
+      const preset = document.getElementById('vrPreset').value;
+      const cam = document.getElementById('vrCamera').value;
+      const action = document.getElementById('vrAction').value.trim();
+      const bases = {
+        dog_squad: 'Tactical Dog Squad characters standing upright on hind legs like humans wearing full tactical cargo pants, gritty cinematic lighting, watermark stamp in corner showing a paw print with the word "pack" overlaying the paw print',
+        bacon_bros: 'Tall-tale outlaw country comedy scene featuring Rusty Bacon, Shady Bacon, and Grizzly Thick-Cut Bacon, warm amber tungsten lighting, 35mm film grain',
+        unbroken_saga: 'Epic dark fantasy subterranean cavern scene from The Unbroken Saga featuring twin heroes Lobo and Corbin, glowing amber rune light, dramatic shadows',
+        synth_neon: 'Pure dark-mode 1980s synth-pop music video stage in deep obsidian black, charcoal steel, and vibrant reddish-orange neon beams, zero blue light'
+      };
+      document.getElementById('vrPromptOutput').value = `${bases[preset]}. Action: ${action}. Camera: ${cam}.`;
+    }
+
+    function saveSceneCue() {
+      const prompt = document.getElementById('vrPromptOutput').value.trim();
+      if (!prompt) return;
+      const cues = JSON.parse(localStorage.getItem(STORAGE_KEYS.cues) || '[]');
+      cues.unshift({ id: Date.now(), text: prompt });
+      localStorage.setItem(STORAGE_KEYS.cues, JSON.stringify(cues.slice(0, 10)));
+      renderCues();
+      logEvent('Saved scene cue to local timeline.', 'ok');
+    }
+
+    function renderCues() {
+      const cues = JSON.parse(localStorage.getItem(STORAGE_KEYS.cues) || '[]');
+      document.getElementById('cueList').innerHTML = cues.map((c, idx) => `
+        <div class="card-item" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+          <span style="font-size:12px;"><strong>Cue #${cues.length - idx}:</strong> ${c.text.slice(0, 85)}...</span>
+          <button type="button" onclick="navigator.clipboard.writeText(${JSON.stringify(c.text)});logEvent('Copied saved cue.', 'ok')">Copy</button>
+        </div>
+      `).join('');
+    }
+
+    function copyText(id, label) {
+      navigator.clipboard.writeText(document.getElementById(id).value);
+      logEvent(`${label} copied to clipboard.`, 'ok');
+    }
+
+    function loadLocalHtmlFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        document.getElementById('sandboxHtmlCode').value = ev.target.result;
+        document.getElementById('ghPath').value = file.name;
+        renderSandboxCode();
+        logEvent(`Loaded local file "${file.name}" into Sandbox Tester.`, 'ok');
+      };
+      reader.readAsText(file);
+    }
+
+    function loadHubIframe(url) {
+      if (!url) return;
+      const frame = document.getElementById('sandboxFrame');
+      frame.removeAttribute('srcdoc');
+      frame.src = url;
+      logEvent(`Previewing live URL: ${url}`, 'ok');
+    }
+
+    function renderSandboxCode() {
+      const code = document.getElementById('sandboxHtmlCode').value;
+      const frame = document.getElementById('sandboxFrame');
+      frame.removeAttribute('src');
+      frame.srcdoc = code;
+      logEvent('Rendered HTML buffer inside Sandbox Preview.', 'ok');
+    }
+
+    function downloadSandboxHtml() {
+      const code = document.getElementById('sandboxHtmlCode').value;
+      const name = document.getElementById('ghPath').value.trim() || 'app.html';
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([code], { type: 'text/html' }));
+      a.download = name;
+      a.click();
+      logEvent(`Downloaded "${name}" to phone storage.`, 'ok');
+    }
+
+    function loadCurrentStudioIntoSandbox() {
+      document.getElementById('sandboxHtmlCode').value = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+      switchStageTab('sandbox');
+      renderSandboxCode();
+      logEvent('Loaded current AgentForge Studio source into editable buffer.', 'ok');
+    }
+
+    async function deployToGitHub() {
+      const token = localStorage.getItem(STORAGE_KEYS.github);
+      const owner = document.getElementById('ghOwner').value.trim();
+      const repo = document.getElementById('ghRepo').value.trim();
+      const path = document.getElementById('ghPath').value.trim();
+      const message = document.getElementById('ghMessage').value.trim() || 'Deploy from AgentForge';
+      const content = document.getElementById('sandboxHtmlCode').value;
+      const resultEl = document.getElementById('deployResult');
+
+      if (!token) { logEvent('Missing GitHub Personal Access Token in Permission Gatekeeper.', 'err'); return; }
+      if (!content.trim()) { logEvent('Sandbox HTML buffer is empty—nothing to deploy.', 'warn'); return; }
+
+      const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+      logEvent(`Checking existing file SHA at ${owner}/${repo}/${path}...`, 'ok');
+      resultEl.textContent = 'Deploying to GitHub...';
+
+      try {
+        let sha;
+        const checkRes = await fetch(apiUrl, { headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' } });
+        if (checkRes.ok) sha = (await checkRes.json()).sha;
+
+        const putBody = { message, content: btoa(unescape(encodeURIComponent(content))) };
+        if (sha) putBody.sha = sha;
+
+        const putRes = await fetch(apiUrl, {
+          method: 'PUT',
+          headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
+          body: JSON.stringify(putBody)
+        });
+        const putData = await putRes.json();
+        if (!putRes.ok) throw new Error(putData.message || `HTTP ${putRes.status}`);
+
+        const liveUrl = `https://${owner.toLowerCase()}.github.io/${repo}/${path === 'index.html' ? '' : path}`;
+        resultEl.innerHTML = `<span class="ok">Deployed!</span> Live in ~60s at: <a href="${liveUrl}" target="_blank" style="color:#FF5E1E;">${liveUrl}</a>`;
+        logEvent(`Successfully committed ${path} to ${owner}/${repo} (commit ${putData.commit.sha.slice(0, 7)}).`, 'ok');
+      } catch (err) {
+        resultEl.innerHTML = `<span class="err">Deploy failed: ${err.message}</span>`;
+        logEvent(`GitHub deploy error: ${err.message}`, 'err');
+      }
+    }
+
+    loadKeys();
+    buildVideoPrompt();
+    renderCues();
+    logEvent('AgentForge Obsidian Studio initialized. All keys stored locally in browser only.', 'ok');
+  </script>
+</body>
+</html>
+
           <label>Scene Action / Beat Sync Notes</label>
           <input id="vrAction" value="Standing upright on hind legs in tactical pants, scanning horizon at dusk" oninput="buildVideoPrompt()" />
           <label>Compiled Video / Image Generation Prompt</label>
